@@ -1,4 +1,5 @@
 // src/api/pokemonWithJapaneseName.ts
+import { INITIAL_POKEMON_LIST_LIMIT } from '../config';
 import { fetchPokemonList, PokemonListResult } from './pokemon';
 import { Pokemon } from './pokemon.type';
 import { fetchPokemonJapaneseName } from './pokemonSpecies';
@@ -20,39 +21,39 @@ export type PokemonListWithJapaneseNames = {
 };
 
 // 日本語名を含むポケモンリストを取得する関数
-export const fetchPokemonListWithJapaneseNames = async (offset: number = 0, limit: number = 20): Promise<PokemonListWithJapaneseNames> => {
+export const fetchPokemonListWithJapaneseNames = async (offset: number = 0, limit: number = INITIAL_POKEMON_LIST_LIMIT): Promise<PokemonListWithJapaneseNames> => {
   // 基本的なポケモンリストを取得
-const pokemonList: PokemonListResult = await fetchPokemonList(offset, limit);
-
+  const pokemonList: PokemonListResult = await fetchPokemonList(offset, limit);
+  
   // 各ポケモンの詳細情報を取得し、日本語名を追加
-const updatedResults: PokemonWithJapaneseName[] = await Promise.all(
+  const updatedResults: PokemonWithJapaneseName[] = await Promise.all(
     pokemonList.results.map(async (pokemon) => {
       // ポケモン種族のURLを生成
-    const speciesUrl = pokemon.url.replace('https://pokeapi.co/api/v2/pokemon/', 'https://pokeapi.co/api/v2/pokemon-species/');
+      const speciesUrl = pokemon.url.replace('https://pokeapi.co/api/v2/pokemon/', 'https://pokeapi.co/api/v2/pokemon-species/');
       // 日本語名を取得
-    const japaneseName = await fetchPokemonJapaneseName(speciesUrl);
+      const japaneseName = await fetchPokemonJapaneseName(speciesUrl);
       // ポケモンの詳細情報を取得
-    const pokemonDetails: Pokemon = await fetch(pokemon.url).then(res => res.json());
-
+      const pokemonDetails: Pokemon = await fetch(pokemon.url).then(res => res.json());
+      
       // 必要な情報を組み合わせて返す
-    return {
+      return {
         ...pokemon,
         japaneseName,
         number: pokemonDetails.id.toString(),
         types: pokemonDetails.types.map((t) => ({
-            type: {
-                name: t.type.name
-            }
+          type: {
+            name: t.type.name
+          }
         })),
         abilities: pokemonDetails.abilities.map((a) => ({
-            ability: {
-                name: a.ability.name
-            }
+          ability: {
+            name: a.ability.name
+          }
         }))
-    };
-})
-);
-
+      };
+    })
+  );
+  
   // 元のリスト情報と更新された結果を組み合わせて返す
-    return { ...pokemonList, results: updatedResults };
+  return { ...pokemonList, results: updatedResults };
 };
